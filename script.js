@@ -38,8 +38,19 @@
 
   let currentEngine = "google";
   let editMode = false;
-  let dragSrcIndex = null;
+
+  // 拖拽状态
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragStartIndex = -1;
+  let dragOverIndex = -1;
+  let dragging = false;
+  const DRAG_THRESHOLD = 6;
+
+  // 长按状态
   let longPressTimer = null;
+  let longPressTriggered = false;
+  const LONG_PRESS_DURATION = 500;
   let shortcuts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
 
   function hexToRgba(hex, alpha) {
@@ -116,7 +127,7 @@
     renderShortcuts();
   }
 
-  function toggleEditMode(on) {
+  function setEditMode(on) {
     editMode = on;
     const grid = document.getElementById("shortcutsGrid");
     if (on) {
@@ -124,6 +135,31 @@
     } else {
       grid.classList.remove("edit-mode");
     }
+  }
+
+  function clearLongPress() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+
+  function clearDragState() {
+    dragging = false;
+    dragStartIndex = -1;
+    document.querySelectorAll(".shortcut-item").forEach((el) => {
+      el.classList.remove("dragging");
+      el.classList.remove("drag-target");
+      el.classList.remove("pressed");
+      el.classList.remove("dragging-active");
+    });
+  }
+
+  function moveShortcut(fromIndex, toIndex) {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+    const [item] = shortcuts.splice(fromIndex, 1);
+    shortcuts.splice(toIndex, 0, item);
+    saveShortcuts();
   }
 
   function renderShortcuts() {
@@ -134,7 +170,6 @@
       a.className = "shortcut-item";
       a.href = item.url;
       a.title = item.name;
-      a.draggable = true;
       a.dataset.index = index;
       a.innerHTML = `
         <span class="shortcut-delete" data-delete="${index}" title="删除">×</span>
@@ -149,99 +184,135 @@
         deleteShortcut(index);
       });
 
-      // Prevent navigation in edit mode
-      if (editMode) {
-        a.addEventListener("click", (ev) => ev.preventDefault());
+      // Pointer events: long press + drag + click
+      a.addEventListener("pointerdown", (ev) => {
+        // 左键或触摸才响应
+        if (ev.pointerType === "mouse" && ev.button !== 0) return;
+        // 如果点在删除按钮上，不启动拖拽
+        if (ev.target.closest(".shortcut-delete")) return;
+
+        dragStartX = ev.clientX;
+        dragStartY = ev.clientY;
+        dragStartIndex = index;
+        dragging = false;
+        longPressTriggered = false;
+        a.classList.add("pressed");
+        a.setPointerCapture(ev.pointerId);
+
+        longPressTimer = setTimeout(() => {
+          longPressTriggered = true;
+          setEditMode(true);
+          a.classList.remove("pressed");
+          a.classList.add("wobble");
+          setTimeout(() => a.classList.remove("wobble"), 400);
+        }, LONG_PRESS_DURATION);
+      });
+
+      a.addEventListener("pointermove", (ev) => {
+        if (dragStartIndex < 0) return;
+
+        const dx = ev.clientX - dragStartX;
+        const dy = ev.clientY - dragStartY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // 一旦移动超过阈值，取消长按
+        if (dist > DRAG_THRESHOLD) {
+          clearLongPress();
+        }
+
+        if (!editMode) return;
+
+        if (!dragging && dist > DRAG_THRESHOLD) {
+          dragging = true;
+          a.classList.add("dragging");
+          a.classList.add("dragging-active");
+          a.classList.remove("pressed");
+          dragOverIndex = dragStartIndex;
+        }
+
+        if (dragging) {
+          // 让拖动的卡片跟随指针（相对偏移视觉）
+          const rect = a.getBoundingClientRect();
+          const offsetX = ev.clientX - (rect.left + rect.width / 2);
+          const offsetY = ev.clientY - (rect.top + rect.height / 2);
+          a.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(0.95)`;
+          a.style.zIndex = "100";
+
+          // 找到指针下方的目标卡片
+          a.style.visibility = "hidden";
+          const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
+          a.style.visibility = "";
+          const targetCard = elBelow ? elBelow.closest(".shortcut-item") : null;
+
+          document.querySelectorAll(".shortcut-item").forEach((el) => {
+            if (el !== a) el.classList.remove("drag-target");
+          });
+
+          if (targetCard && targetCard !== a && targetCard.dataset.index) {
+            targetCard.classList.add("drag-target");
+            dragOverIndex = parseInt(targetCard.dataset.index);
+          }
+        }
+      });
+
+      function endDrag(ev) {
+        clearLongPress();
+
+        if (dragging) {
+          const fromIndex = dragStartIndex;
+          const toIndex = dragOverIndex;
+          // 清除视觉样式
+          a.style.transform = "";
+          a.style.zIndex = "";
+          clearDragState();
+          try { a.releasePointerCapture(ev.pointerId); } catch (e) {}
+
+          if (fromIndex >= 0 && toIndex >= 0 && fromIndex !== toIndex) {
+            moveShortcut(fromIndex, toIndex);
+            renderShortcuts();
+          }
+          return;
+        }
+
+        a.style.transform = "";
+        a.style.zIndex = "";
+        clearDragState();
+        try { a.releasePointerCapture(ev.pointerId); } catch (e) {}
+
+        if (longPressTriggered) {
+          longPressTriggered = false;
+          return;
+        }
       }
 
-      // Long press to enter edit mode
-      a.addEventListener("touchstart", (ev) => {
-        longPressTimer = setTimeout(() => {
-          toggleEditMode(true);
-        }, LONG_PRESS_DURATION);
-      }, { passive: true });
-
-      a.addEventListener("touchend", () => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
+      a.addEventListener("pointerup", endDrag);
+      a.addEventListener("pointercancel", (ev) => {
+        clearLongPress();
+        a.style.transform = "";
+        a.style.zIndex = "";
+        clearDragState();
+      });
+      a.addEventListener("lostpointercapture", () => {
+        clearLongPress();
+        a.style.transform = "";
+        a.style.zIndex = "";
+        clearDragState();
       });
 
-      a.addEventListener("touchmove", () => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      });
-
-      // Mouse long press (for desktop testing)
-      a.addEventListener("mousedown", () => {
-        longPressTimer = setTimeout(() => {
-          toggleEditMode(true);
-        }, LONG_PRESS_DURATION);
-      });
-
-      a.addEventListener("mouseup", () => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      });
-
-      a.addEventListener("mouseleave", () => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      });
-
-      // Drag events
-      a.addEventListener("dragstart", (ev) => {
-        dragSrcIndex = index;
-        a.classList.add("dragging");
-        ev.dataTransfer.effectAllowed = "move";
-        ev.dataTransfer.setData("text/plain", index);
-      });
-
-      a.addEventListener("dragend", () => {
-        a.classList.remove("dragging");
-        dragSrcIndex = null;
-        document.querySelectorAll(".shortcut-item").forEach((el) => {
-          el.classList.remove("drag-over");
-        });
-      });
-
-      a.addEventListener("dragover", (ev) => {
-        ev.preventDefault();
-        ev.dataTransfer.dropEffect = "move";
-        if (dragSrcIndex !== null && parseInt(a.dataset.index) !== dragSrcIndex) {
-          a.classList.add("drag-over");
-        }
-      });
-
-      a.addEventListener("dragleave", () => {
-        a.classList.remove("drag-over");
-      });
-
-      a.addEventListener("drop", (ev) => {
-        ev.preventDefault();
-        a.classList.remove("drag-over");
-        const fromIndex = dragSrcIndex;
-        const toIndex = parseInt(a.dataset.index);
-        if (fromIndex !== null && fromIndex !== toIndex) {
-          const [moved] = shortcuts.splice(fromIndex, 1);
-          shortcuts.splice(toIndex, 0, moved);
-          saveShortcuts();
-          renderShortcuts();
-          if (editMode) toggleEditMode(true);
+      // click：在编辑模式并且不是拖拽之后，阻止跳转
+      a.addEventListener("click", (ev) => {
+        if (editMode) {
+          ev.preventDefault();
+          return;
         }
       });
 
       grid.appendChild(a);
     });
 
-    if (editMode) toggleEditMode(true);
+    if (editMode) {
+      grid.classList.add("edit-mode");
+    }
   }
 
   function handleSearch(e) {
@@ -349,10 +420,15 @@
       lastTouch = now;
     }, { passive: false });
 
-    // Click outside shortcuts to exit edit mode
-    document.getElementById("shortcutsGrid").addEventListener("click", (ev) => {
-      if (editMode && !ev.target.closest(".shortcut-item")) {
-        toggleEditMode(false);
+    // 点击快捷方式卡片之外的空白处退出编辑模式
+    document.addEventListener("click", (ev) => {
+      if (!editMode) return;
+      const grid = document.getElementById("shortcutsGrid");
+      const shortcutsCard = grid.closest(".shortcuts-card");
+      const isInsideShortcuts = shortcutsCard && shortcutsCard.contains(ev.target);
+      const isOnDelete = ev.target.closest && ev.target.closest(".shortcut-delete");
+      if (!isInsideShortcuts && !isOnDelete) {
+        setEditMode(false);
       }
     });
   }

@@ -343,7 +343,7 @@ body {
   cursor: grab;
 }
 
-.shortcuts-grid.edit-mode .shortcut-item:active {
+.shortcuts-grid.edit-mode .shortcut-item.dragging-active {
   cursor: grabbing;
 }
 
@@ -357,7 +357,7 @@ body {
   border: 1px solid var(--card-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
   text-decoration: none;
   color: inherit;
   gap: 10px;
@@ -366,30 +366,46 @@ body {
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
+  outline: none;
 }
 
-.shortcut-item:active:not(.dragging) {
+.shortcut-item.pressed {
   transform: scale(0.93);
   opacity: 0.85;
-  box-shadow: 0 2px 8px rgba(100, 120, 150, 0.2);
+  box-shadow: 0 2px 8px rgba(100, 120, 150, 0.25);
+}
+
+.shortcut-item.dragging {
+  opacity: 0.45;
+  transform: scale(0.9);
+  box-shadow: 0 4px 16px rgba(100, 120, 150, 0.35);
+  z-index: 5;
+  border-color: var(--brand-color);
+}
+
+.shortcut-item.drag-target {
+  border-color: var(--brand-color);
+  border-style: dashed;
+  border-width: 2px;
+  box-shadow: 0 0 0 3px var(--brand-color-ring);
+}
+
+.shortcut-item.wobble {
+  animation: wobble 0.35s ease-in-out;
+}
+
+@keyframes wobble {
+  0%   { transform: rotate(0deg) scale(1); }
+  25%  { transform: rotate(-1.5deg) scale(1.02); }
+  50%  { transform: rotate(1.5deg) scale(1.02); }
+  75%  { transform: rotate(-0.8deg) scale(1.01); }
+  100% { transform: rotate(0deg) scale(1); }
 }
 
 .shortcut-item:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(100, 120, 150, 0.15);
   border-color: var(--accent);
-}
-
-.shortcut-item.dragging {
-  opacity: 0.4;
-  transform: scale(0.95);
-  z-index: 10;
-}
-
-.shortcut-item.drag-over {
-  border-color: var(--brand-color);
-  border-style: dashed;
-  box-shadow: 0 0 0 3px var(--brand-color-ring);
 }
 
 .shortcut-delete {
@@ -414,16 +430,24 @@ body {
   transform: scale(0.6);
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
   z-index: 10;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   -webkit-tap-highlight-color: transparent;
 }
 
-.shortcut-item:hover .shortcut-delete,
-.shortcut-item:active .shortcut-delete,
+.shortcut-delete:active {
+  transform: scale(0.9);
+  background: #dc2626;
+}
+
 .edit-mode .shortcut-delete {
   opacity: 1;
   visibility: visible;
   transform: scale(1);
+}
+
+.edit-mode .shortcut-item:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(100, 120, 150, 0.15);
 }
 
 .shortcut-icon {
