@@ -516,7 +516,12 @@
   function showRandomQuote() {
     const el = document.getElementById("quote");
     const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-    el.textContent = quote + "        " + quote;
+    el.className = "";
+    el.textContent = quote;
+    if (el.scrollWidth > el.clientWidth + 2) {
+      el.className = "quote-text";
+      el.textContent = quote + "        " + quote;
+    }
   }
 
   function init() {
