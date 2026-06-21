@@ -543,10 +543,9 @@
     document.addEventListener("click", (ev) => {
       if (!editMode) return;
       const grid = document.getElementById("shortcutsGrid");
-      const shortcutsCard = grid.closest(".shortcuts-card");
-      const isInsideShortcuts = shortcutsCard && shortcutsCard.contains(ev.target);
+      const isOnShortcutItem = ev.target.closest && ev.target.closest(".shortcut-item");
       const isOnDelete = ev.target.closest && ev.target.closest(".shortcut-delete");
-      if (!isInsideShortcuts && !isOnDelete) {
+      if (!isOnShortcutItem && !isOnDelete) {
         setEditMode(false);
       }
     });
