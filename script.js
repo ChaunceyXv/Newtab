@@ -587,6 +587,75 @@
         setEditMode(false);
       }
     });
+
+    // ── 底部抽屉拖拽 ──
+    const drawer = document.getElementById("drawer");
+    const bottomBar = document.querySelector(".bottom-bar");
+    const OPEN_THRESHOLD = 80;
+    let drawerDragging = false;
+    let drawerDragStartY = 0;
+    let drawerOpen = false;
+
+    function openDrawer() {
+      drawer.classList.add("open");
+      drawerOpen = true;
+    }
+    function closeDrawer() {
+      drawer.classList.remove("open");
+      drawerOpen = false;
+    }
+
+    // 底部指示条 → 向上拖拽打开抽屉
+    bottomBar.addEventListener("pointerdown", (e) => {
+      drawerDragging = true;
+      drawerDragStartY = e.clientY;
+      bottomBar.setPointerCapture(e.pointerId);
+    });
+
+    bottomBar.addEventListener("pointermove", (e) => {
+      if (!drawerDragging) return;
+      if (drawerOpen) return;
+      const delta = drawerDragStartY - e.clientY;
+      if (delta > OPEN_THRESHOLD) {
+        drawerDragging = false;
+        openDrawer();
+        bottomBar.releasePointerCapture(e.pointerId);
+      }
+    });
+
+    bottomBar.addEventListener("pointerup", () => {
+      drawerDragging = false;
+    });
+
+    // 抽屉本身 → 向下拖拽关闭
+    drawer.addEventListener("pointerdown", (e) => {
+      drawerDragging = true;
+      drawerDragStartY = e.clientY;
+      drawer.setPointerCapture(e.pointerId);
+    });
+
+    drawer.addEventListener("pointermove", (e) => {
+      if (!drawerDragging) return;
+      if (!drawerOpen) return;
+      const delta = e.clientY - drawerDragStartY;
+      if (delta > OPEN_THRESHOLD) {
+        drawerDragging = false;
+        closeDrawer();
+        drawer.releasePointerCapture(e.pointerId);
+      }
+    });
+
+    drawer.addEventListener("pointerup", () => {
+      drawerDragging = false;
+    });
+
+    // 点击遮罩关闭
+    document.addEventListener("click", (e) => {
+      if (!drawerOpen) return;
+      if (!drawer.contains(e.target) && !bottomBar.contains(e.target)) {
+        closeDrawer();
+      }
+    });
   }
 
   document.addEventListener("DOMContentLoaded", init);
