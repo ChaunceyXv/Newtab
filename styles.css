@@ -472,6 +472,7 @@ body {
   left: 30%;
   width: 40%;
   padding: 2px 14px;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
