@@ -469,8 +469,8 @@ body {
 .bottom-bar {
   position: fixed;
   bottom: 18px;
-  left: 35%;
-  width: 30%;
+  left: 30%;
+  width: 40%;
   padding: 2px 14px;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
