@@ -513,16 +513,47 @@
     });
   }
 
+  let scrollTimer = null;
   function showRandomQuote() {
+    if (scrollTimer) {
+      clearTimeout(scrollTimer);
+      scrollTimer = null;
+    }
     const bar = document.querySelector(".bottom-bar");
     const el = document.getElementById("quote");
     const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-    el.className = "";
+    bar.classList.remove("scrolling");
+    el.classList.remove("quote-text");
+    el.style.transition = "none";
+    el.style.transform = "translateX(0)";
     el.textContent = quote;
     if (bar.scrollWidth > bar.clientWidth + 2) {
-      el.className = "quote-text";
-      el.textContent = quote + "        " + quote;
+      bar.classList.add("scrolling");
+      el.classList.add("quote-text");
+      setTimeout(() => {
+        startScroll(bar, el);
+      }, 1500);
     }
+  }
+
+  function startScroll(bar, el) {
+    const distance = bar.scrollWidth - bar.clientWidth;
+    const duration = Math.max(6000, distance * 25);
+    let phase = 0;
+    function tick() {
+      if (phase === 0) {
+        el.style.transition = `transform ${duration}ms linear`;
+        el.style.transform = `translateX(-${distance}px)`;
+        phase = 1;
+        scrollTimer = setTimeout(tick, duration);
+      } else {
+        el.style.transition = "none";
+        el.style.transform = "translateX(0)";
+        phase = 0;
+        scrollTimer = setTimeout(tick, 1200);
+      }
+    }
+    tick();
   }
 
   function init() {

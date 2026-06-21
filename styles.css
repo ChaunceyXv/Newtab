@@ -488,9 +488,13 @@ body {
   white-space: nowrap;
 }
 
-.bottom-bar .quote-text {
+.bottom-bar #quote {
   display: inline-block;
-  animation: marquee 12s linear infinite;
+  white-space: nowrap;
+}
+
+.bottom-bar.scrolling {
+  text-align: left;
 }
 
 @keyframes marquee {
