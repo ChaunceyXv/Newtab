@@ -598,10 +598,16 @@
 
     function openDrawer() {
       drawer.classList.add("open");
+      bottomBar.style.setProperty("--handle-offset", "0");
+      bottomBar.style.setProperty("--bar-radius", "14px 14px 0 0");
+      bottomBar.style.setProperty("--bar-shadow-y", "-4px");
       drawerOpen = true;
     }
     function closeDrawer() {
       drawer.classList.remove("open");
+      bottomBar.style.setProperty("--handle-offset", "18px");
+      bottomBar.style.setProperty("--bar-radius", "14px");
+      bottomBar.style.setProperty("--bar-shadow-y", "4px");
       drawerOpen = false;
     }
 
