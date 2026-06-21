@@ -21,12 +21,17 @@
     "星光不问赶路人，时光不负有心人。",
   ];
 
-  const SEARCH_ENGINES = {
-    google: "https://www.google.com/search?q=",
-    bing: "https://www.bing.com/search?q=",
-    baidu: "https://www.baidu.com/s?wd=",
-    duckduckgo: "https://duckduckgo.com/?q=",
-  };
+  const ENGINE_LIST = [
+    { id: "google", name: "Google", icon: "G", color: "#4285f4", url: "https://www.google.com/search?q=" },
+    { id: "bing", name: "Bing", icon: "B", color: "#00809d", url: "https://www.bing.com/search?q=" },
+    { id: "baidu", name: "百度", icon: "百", color: "#e60012", url: "https://www.baidu.com/s?wd=" },
+    { id: "duckduckgo", name: "DuckDuckGo", icon: "D", color: "#de5833", url: "https://duckduckgo.com/?q=" },
+  ];
+
+  const SEARCH_ENGINES = ENGINE_LIST.reduce((acc, e) => {
+    acc[e.id] = e.url;
+    return acc;
+  }, {});
 
   let currentEngine = "google";
 
@@ -80,21 +85,76 @@
     const input = document.getElementById("searchInput");
     const query = input.value.trim();
     if (!query) return;
-    const engine = document.getElementById("engineDropdown").value;
     if (/^https?:\/\//i.test(query)) {
       window.location.href = query;
     } else if (/^[\w-]+(\.[\w-]+)+/.test(query) && !query.includes(" ")) {
       window.location.href = "https://" + query;
     } else {
-      window.location.href = SEARCH_ENGINES[engine] + encodeURIComponent(query);
+      window.location.href = SEARCH_ENGINES[currentEngine] + encodeURIComponent(query);
     }
   }
 
+  function renderEngineMenu() {
+    const menu = document.getElementById("engineMenu");
+    menu.innerHTML = "";
+    ENGINE_LIST.forEach((e) => {
+      const li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.dataset.engine = e.id;
+      if (e.id === currentEngine) li.classList.add("active");
+      li.innerHTML = `<span class="engine-icon" style="background:${e.color}">${e.icon}</span><span class="engine-label">${e.name}</span>`;
+      li.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        selectEngine(e.id);
+        closeEngineMenu();
+        document.getElementById("searchInput").focus();
+      });
+      menu.appendChild(li);
+    });
+  }
+
+  function updateEngineTrigger() {
+    const engine = ENGINE_LIST.find((e) => e.id === currentEngine);
+    const iconEl = document.getElementById("engineIcon");
+    iconEl.textContent = engine.icon;
+    iconEl.style.background = engine.color;
+  }
+
+  function selectEngine(id) {
+    currentEngine = id;
+    updateEngineTrigger();
+    renderEngineMenu();
+  }
+
+  function toggleEngineMenu() {
+    const wrapper = document.getElementById("engineSelect");
+    const trigger = document.getElementById("engineTrigger");
+    const isOpen = wrapper.classList.toggle("open");
+    trigger.setAttribute("aria-expanded", String(isOpen));
+  }
+
+  function closeEngineMenu() {
+    const wrapper = document.getElementById("engineSelect");
+    const trigger = document.getElementById("engineTrigger");
+    wrapper.classList.remove("open");
+    trigger.setAttribute("aria-expanded", "false");
+  }
+
   function bindEngines() {
-    const dropdown = document.getElementById("engineDropdown");
-    dropdown.addEventListener("change", () => {
-      currentEngine = dropdown.value;
-      document.getElementById("searchInput").focus();
+    renderEngineMenu();
+    updateEngineTrigger();
+    const trigger = document.getElementById("engineTrigger");
+    trigger.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      toggleEngineMenu();
+    });
+    document.addEventListener("click", (ev) => {
+      if (!document.getElementById("engineSelect").contains(ev.target)) {
+        closeEngineMenu();
+      }
+    });
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") closeEngineMenu();
     });
   }
 
