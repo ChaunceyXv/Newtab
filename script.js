@@ -36,7 +36,7 @@
     return acc;
   }, {});
 
-  let currentEngine = "bing";
+  let currentEngine = localStorage.getItem("milky_engine") || "bing";
   let editMode = false;
 
   // 拖拽状态
@@ -476,6 +476,7 @@
 
   function selectEngine(id) {
     currentEngine = id;
+    localStorage.setItem("milky_engine", id);
     updateEngineTrigger();
     renderEngineMenu();
   }
