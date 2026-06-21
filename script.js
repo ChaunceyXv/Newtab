@@ -50,7 +50,6 @@
   // 长按状态
   let longPressTimer = null;
   let longPressTriggered = false;
-  const LONG_PRESS_DURATION = 500;
   let shortcuts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
 
   function hexToRgba(hex, alpha) {
@@ -63,21 +62,6 @@
     const g = (num >> 8) & 255;
     const b = num & 255;
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  }
-
-  function darken(hex, amount) {
-    const clean = hex.replace("#", "");
-    const full = clean.length === 3
-      ? clean.split("").map((c) => c + c).join("")
-      : clean;
-    const num = parseInt(full, 16);
-    let r = (num >> 16) & 255;
-    let g = (num >> 8) & 255;
-    let b = num & 255;
-    r = Math.max(0, Math.round(r - r * amount));
-    g = Math.max(0, Math.round(g - g * amount));
-    b = Math.max(0, Math.round(b - b * amount));
-    return `rgb(${r}, ${g}, ${b})`;
   }
 
   function applyBrandColor(hex) {
