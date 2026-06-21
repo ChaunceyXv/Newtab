@@ -2,10 +2,10 @@
   --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #eef1f5 50%, #f0f3f7 100%);
   --card-bg: #ffffff;
   --card-border: transparent;
-  --card-shadow: 0 10px 40px rgba(100, 120, 140, 0.12),
-                 0 2px 8px rgba(100, 120, 140, 0.06);
-  --card-hover-shadow: 0 14px 48px rgba(100, 120, 140, 0.18),
-                       0 4px 12px rgba(100, 120, 140, 0.1);
+  --card-shadow: 0 20px 60px rgba(80, 100, 120, 0.18),
+                 0 6px 16px rgba(80, 100, 120, 0.1);
+  --card-hover-shadow: 0 28px 72px rgba(80, 100, 120, 0.25),
+                       0 8px 20px rgba(80, 100, 120, 0.12);
   --text-primary: #2c3440;
   --text-secondary: #7a8699;
   --text-muted: #b4bed0;
@@ -136,10 +136,15 @@ body {
   user-select: none;
   transition: color 0.2s ease, text-shadow 0.2s ease;
   text-shadow:
-    1px 1px 0 rgba(255, 255, 255, 0.9),
-    2px 3px 0 rgba(255, 255, 255, 0.85),
-    3px 5px 0 #e8eaec,
-    4px 7px 14px rgba(80, 100, 120, 0.25);
+    1px 1px 0 rgba(255, 255, 255, 0.95),
+    2px 2px 0 rgba(255, 255, 255, 0.95),
+    3px 3px 0 rgba(240, 240, 240, 0.9),
+    4px 4px 0 rgba(220, 220, 220, 0.85),
+    5px 5px 0 rgba(200, 200, 200, 0.7),
+    6px 6px 0 rgba(180, 180, 180, 0.55),
+    8px 8px 0 rgba(160, 160, 160, 0.35),
+    12px 12px 24px rgba(80, 100, 120, 0.35),
+    18px 18px 30px rgba(80, 100, 120, 0.25);
 }
 
 .engine-logo:hover {
