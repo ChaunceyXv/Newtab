@@ -598,7 +598,7 @@
 
     function openDrawer() {
       drawer.classList.add("open");
-      bottomBar.style.setProperty("--handle-offset", "0");
+      bottomBar.style.setProperty("--handle-offset", "52vh");
       bottomBar.style.setProperty("--bar-radius", "14px 14px 0 0");
       bottomBar.style.setProperty("--bar-shadow-y", "-4px");
       drawerOpen = true;
