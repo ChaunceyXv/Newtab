@@ -297,6 +297,10 @@
               newTarget.classList.add("drag-target");
               dragOverIndex = targetIndex;
             }
+            // 关键修复：当指针不在任何卡片上时，dragOverIndex 重置为起始索引（不交换）
+            if (targetIndex < 0) {
+              dragOverIndex = dragStartIndex;
+            }
             dragCurrentTargetIndex = targetIndex;
           }
         }
