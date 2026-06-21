@@ -151,6 +151,9 @@
       el.classList.remove("drag-target");
       el.classList.remove("pressed");
       el.classList.remove("dragging-active");
+      el.style.transform = "";
+      el.style.transition = "";
+      el.style.visibility = "";
     });
   }
 
@@ -230,26 +233,38 @@
         }
 
         if (dragging) {
-          // 让拖动的卡片跟随指针（相对偏移视觉）
-          const rect = a.getBoundingClientRect();
-          const offsetX = ev.clientX - (rect.left + rect.width / 2);
-          const offsetY = ev.clientY - (rect.top + rect.height / 2);
-          a.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(0.95)`;
-          a.style.zIndex = "100";
-
-          // 找到指针下方的目标卡片
+          // 隐藏拖动中的卡片，找到指针下的目标卡片
           a.style.visibility = "hidden";
           const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
           a.style.visibility = "";
+
           const targetCard = elBelow ? elBelow.closest(".shortcut-item") : null;
 
+          // 清除所有卡片的退让样式
           document.querySelectorAll(".shortcut-item").forEach((el) => {
-            if (el !== a) el.classList.remove("drag-target");
+            el.classList.remove("drag-target");
+            el.style.transform = "";
+            el.style.transition = "";
           });
 
           if (targetCard && targetCard !== a && targetCard.dataset.index) {
+            const targetIndex = parseInt(targetCard.dataset.index);
+            dragOverIndex = targetIndex;
             targetCard.classList.add("drag-target");
-            dragOverIndex = parseInt(targetCard.dataset.index);
+
+            // 目标卡片退让：如果是往右拖，目标向左移；往左拖，目标向右移
+            const draggedRect = a.getBoundingClientRect();
+            const targetRect = targetCard.getBoundingClientRect();
+            const moveX = ev.clientX - dragStartX;
+
+            if (moveX > 0) {
+              // 往右拖，目标向左退让
+              targetCard.style.transform = `translateX(-${draggedRect.width * 0.5}px) scale(0.92)`;
+            } else {
+              // 往左拖，目标向右退让
+              targetCard.style.transform = `translateX(${draggedRect.width * 0.5}px) scale(0.92)`;
+            }
+            targetCard.style.transition = "transform 0.2s ease";
           }
         }
       });
