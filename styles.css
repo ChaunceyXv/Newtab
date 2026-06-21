@@ -175,7 +175,7 @@ body {
 .engine-menu {
   position: absolute;
   top: calc(100% + 6px);
-  left: -6px;
+  left: 0;
   min-width: 160px;
   list-style: none;
   padding: 6px;
