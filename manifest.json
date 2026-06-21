@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "New Tab Pro",
+  "version": "0.1.0",
+  "description": "模块化架构的浏览器新标签页插件，支持自定义搜索。",
+  "chrome_url_overrides": {
+    "newtab": "src/newtab/index.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "New Tab Pro"
+  }
+}
