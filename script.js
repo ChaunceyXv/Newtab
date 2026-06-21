@@ -45,6 +45,8 @@
   let dragStartIndex = -1;
   let dragOverIndex = -1;
   let dragging = false;
+  let dragStartRect = null;
+  let dragCurrentTargetIndex = -1;
   const DRAG_THRESHOLD = 6;
 
   // 长按状态
@@ -146,6 +148,9 @@
   function clearDragState() {
     dragging = false;
     dragStartIndex = -1;
+    dragOverIndex = -1;
+    dragCurrentTargetIndex = -1;
+    dragStartRect = null;
     document.querySelectorAll(".shortcut-item").forEach((el) => {
       el.classList.remove("dragging");
       el.classList.remove("drag-target");
@@ -154,6 +159,7 @@
       el.style.transform = "";
       el.style.transition = "";
       el.style.visibility = "";
+      el.style.zIndex = "";
     });
   }
 
@@ -198,6 +204,9 @@
         dragStartIndex = index;
         dragging = false;
         longPressTriggered = false;
+        dragStartRect = a.getBoundingClientRect();
+        dragCurrentTargetIndex = -1;
+        dragOverIndex = -1;
         a.classList.add("pressed");
         a.setPointerCapture(ev.pointerId);
 
@@ -229,42 +238,51 @@
           a.classList.add("dragging");
           a.classList.add("dragging-active");
           a.classList.remove("pressed");
+          a.style.zIndex = "100";
+          a.style.transition = "none";
           dragOverIndex = dragStartIndex;
         }
 
         if (dragging) {
-          // 隐藏拖动中的卡片，找到指针下的目标卡片
+          // 1. 跟手跟随：简单用相对起始位置的偏移
+          a.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
+
+          // 2. 找到指针下的目标卡片
           a.style.visibility = "hidden";
           const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
           a.style.visibility = "";
-
           const targetCard = elBelow ? elBelow.closest(".shortcut-item") : null;
 
-          // 清除所有卡片的退让样式
-          document.querySelectorAll(".shortcut-item").forEach((el) => {
-            el.classList.remove("drag-target");
-            el.style.transform = "";
-            el.style.transition = "";
-          });
-
+          let targetIndex = -1;
           if (targetCard && targetCard !== a && targetCard.dataset.index) {
-            const targetIndex = parseInt(targetCard.dataset.index);
-            dragOverIndex = targetIndex;
-            targetCard.classList.add("drag-target");
+            targetIndex = parseInt(targetCard.dataset.index);
+          }
 
-            // 目标卡片退让：如果是往右拖，目标向左移；往左拖，目标向右移
-            const draggedRect = a.getBoundingClientRect();
-            const targetRect = targetCard.getBoundingClientRect();
-            const moveX = ev.clientX - dragStartX;
-
-            if (moveX > 0) {
-              // 往右拖，目标向左退让
-              targetCard.style.transform = `translateX(-${draggedRect.width * 0.5}px) scale(0.92)`;
-            } else {
-              // 往左拖，目标向右退让
-              targetCard.style.transform = `translateX(${draggedRect.width * 0.5}px) scale(0.92)`;
+          // 3. 目标变化时：旧目标回归原位，新目标滑到被拖卡片的原始位置
+          if (targetIndex !== dragCurrentTargetIndex) {
+            // 清除旧目标（如果存在）
+            if (dragCurrentTargetIndex >= 0) {
+              const cards = document.querySelectorAll(".shortcut-item");
+              cards.forEach((el) => {
+                if (el !== a && parseInt(el.dataset.index) === dragCurrentTargetIndex) {
+                  el.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+                  el.style.transform = "";
+                  el.classList.remove("drag-target");
+                }
+              });
             }
-            targetCard.style.transition = "transform 0.2s ease";
+
+            // 设置新目标
+            if (targetCard && targetIndex >= 0) {
+              const targetRectNow = targetCard.getBoundingClientRect();
+              const offsetX = dragStartRect.left - targetRectNow.left;
+              const offsetY = dragStartRect.top - targetRectNow.top;
+              targetCard.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+              targetCard.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(0.92)`;
+              targetCard.classList.add("drag-target");
+              dragOverIndex = targetIndex;
+            }
+            dragCurrentTargetIndex = targetIndex;
           }
         }
       });
@@ -275,15 +293,34 @@
         if (dragging) {
           const fromIndex = dragStartIndex;
           const toIndex = dragOverIndex;
-          // 清除视觉样式
-          a.style.transform = "";
-          a.style.zIndex = "";
-          clearDragState();
-          try { a.releasePointerCapture(ev.pointerId); } catch (e) {}
 
+          // 先清除目标卡片的让位样式
+          document.querySelectorAll(".shortcut-item").forEach((el) => {
+            if (el !== a) {
+              el.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+              el.style.transform = "";
+              el.classList.remove("drag-target");
+            }
+          });
+
+          // 被拖卡片回归原位（取消时）或直接完成交换
           if (fromIndex >= 0 && toIndex >= 0 && fromIndex !== toIndex) {
+            // 松手完成交换
+            a.style.transition = "none";
+            a.style.transform = "";
+            a.style.zIndex = "";
+            clearDragState();
+            try { a.releasePointerCapture(ev.pointerId); } catch (e) {}
+
             moveShortcut(fromIndex, toIndex);
             renderShortcuts();
+          } else {
+            // 没有有效目标：被拖卡片动画回原位
+            a.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+            a.style.transform = "";
+            a.style.zIndex = "";
+            clearDragState();
+            try { a.releasePointerCapture(ev.pointerId); } catch (e) {}
           }
           return;
         }
@@ -302,12 +339,22 @@
       a.addEventListener("pointerup", endDrag);
       a.addEventListener("pointercancel", (ev) => {
         clearLongPress();
+        // 所有卡片回归原位
+        document.querySelectorAll(".shortcut-item").forEach((el) => {
+          el.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+          el.style.transform = "";
+        });
+        a.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
         a.style.transform = "";
         a.style.zIndex = "";
         clearDragState();
       });
       a.addEventListener("lostpointercapture", () => {
         clearLongPress();
+        document.querySelectorAll(".shortcut-item").forEach((el) => {
+          el.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+          el.style.transform = "";
+        });
         a.style.transform = "";
         a.style.zIndex = "";
         clearDragState();
