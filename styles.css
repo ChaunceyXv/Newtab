@@ -105,13 +105,50 @@ body {
   background: var(--input-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-sm);
-  padding: 4px 4px 4px 20px;
+  padding: 4px 4px 4px 6px;
   transition: all 0.2s ease;
 }
 
 .search-box:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.12);
+  box-shadow: 0 0 0 3px rgba(143, 164, 197, 0.18);
+}
+
+.engine-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  border-right: 1px solid var(--card-border);
+}
+
+.engine-dropdown {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+  padding: 10px 26px 10px 10px;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a8699' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 12px;
+}
+
+.engine-dropdown:hover {
+  background-color: rgba(143, 164, 197, 0.08);
+}
+
+.engine-dropdown option {
+  background: #ffffff;
+  color: var(--text-primary);
 }
 
 .search-input {
@@ -121,7 +158,7 @@ body {
   background: transparent;
   font-size: 16px;
   color: var(--text-primary);
-  padding: 12px 8px;
+  padding: 12px 10px 12px 12px;
   font-family: inherit;
 }
 
@@ -145,36 +182,6 @@ body {
 .search-btn:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
-}
-
-.search-engines {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-  flex-wrap: wrap;
-}
-
-.engine-btn {
-  background: transparent;
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
-}
-
-.engine-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--accent);
-}
-
-.engine-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
 }
 
 .shortcuts-card {

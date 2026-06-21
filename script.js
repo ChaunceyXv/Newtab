@@ -80,23 +80,21 @@
     const input = document.getElementById("searchInput");
     const query = input.value.trim();
     if (!query) return;
+    const engine = document.getElementById("engineDropdown").value;
     if (/^https?:\/\//i.test(query)) {
       window.location.href = query;
     } else if (/^[\w-]+(\.[\w-]+)+/.test(query) && !query.includes(" ")) {
       window.location.href = "https://" + query;
     } else {
-      window.location.href = SEARCH_ENGINES[currentEngine] + encodeURIComponent(query);
+      window.location.href = SEARCH_ENGINES[engine] + encodeURIComponent(query);
     }
   }
 
   function bindEngines() {
-    document.querySelectorAll(".engine-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".engine-btn").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        currentEngine = btn.dataset.engine;
-        document.getElementById("searchInput").focus();
-      });
+    const dropdown = document.getElementById("engineDropdown");
+    dropdown.addEventListener("change", () => {
+      currentEngine = dropdown.value;
+      document.getElementById("searchInput").focus();
     });
   }
 
