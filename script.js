@@ -47,6 +47,7 @@
   let dragging = false;
   let dragStartRect = null;
   let dragCurrentTargetIndex = -1;
+  let dragCardRects = [];
   const DRAG_THRESHOLD = 6;
 
   // 长按状态
@@ -151,7 +152,10 @@
     dragOverIndex = -1;
     dragCurrentTargetIndex = -1;
     dragStartRect = null;
-    document.querySelectorAll(".shortcut-item").forEach((el) => {
+    const recordedRects = dragCardRects;
+    dragCardRects = [];
+    (recordedRects.length ? recordedRects : document.querySelectorAll(".shortcut-item")).forEach((item) => {
+      const el = item && item.el ? item.el : item;
       el.classList.remove("dragging");
       el.classList.remove("drag-target");
       el.classList.remove("pressed");
@@ -207,6 +211,14 @@
         dragStartRect = a.getBoundingClientRect();
         dragCurrentTargetIndex = -1;
         dragOverIndex = -1;
+
+        // 记录所有卡片的原始位置（拖拽过程中不重新计算）
+        dragCardRects = [];
+        document.querySelectorAll(".shortcut-item").forEach((el) => {
+          const idx = parseInt(el.dataset.index);
+          dragCardRects[idx] = { el, rect: el.getBoundingClientRect() };
+        });
+
         a.classList.add("pressed");
         a.setPointerCapture(ev.pointerId);
 
@@ -244,42 +256,44 @@
         }
 
         if (dragging) {
-          // 1. 跟手跟随：简单用相对起始位置的偏移
+          // 1. 跟手跟随
           a.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
 
-          // 2. 找到指针下的目标卡片
-          a.style.visibility = "hidden";
-          const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
-          a.style.visibility = "";
-          const targetCard = elBelow ? elBelow.closest(".shortcut-item") : null;
-
+          // 2. 通过原始记录的 rects 判断指针落在哪个卡片上（稳定，不闪烁）
           let targetIndex = -1;
-          if (targetCard && targetCard !== a && targetCard.dataset.index) {
-            targetIndex = parseInt(targetCard.dataset.index);
+          for (let i = 0; i < dragCardRects.length; i++) {
+            const item = dragCardRects[i];
+            if (!item || item.el === a) continue;
+            const r = item.rect;
+            if (
+              ev.clientX >= r.left &&
+              ev.clientX <= r.right &&
+              ev.clientY >= r.top &&
+              ev.clientY <= r.bottom
+            ) {
+              targetIndex = i;
+              break;
+            }
           }
 
           // 3. 目标变化时：旧目标回归原位，新目标滑到被拖卡片的原始位置
           if (targetIndex !== dragCurrentTargetIndex) {
-            // 清除旧目标（如果存在）
-            if (dragCurrentTargetIndex >= 0) {
-              const cards = document.querySelectorAll(".shortcut-item");
-              cards.forEach((el) => {
-                if (el !== a && parseInt(el.dataset.index) === dragCurrentTargetIndex) {
-                  el.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
-                  el.style.transform = "";
-                  el.classList.remove("drag-target");
-                }
-              });
+            // 旧目标回归原位
+            if (dragCurrentTargetIndex >= 0 && dragCardRects[dragCurrentTargetIndex]) {
+              const oldTarget = dragCardRects[dragCurrentTargetIndex].el;
+              oldTarget.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+              oldTarget.style.transform = "";
+              oldTarget.classList.remove("drag-target");
             }
 
-            // 设置新目标
-            if (targetCard && targetIndex >= 0) {
-              const targetRectNow = targetCard.getBoundingClientRect();
-              const offsetX = dragStartRect.left - targetRectNow.left;
-              const offsetY = dragStartRect.top - targetRectNow.top;
-              targetCard.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
-              targetCard.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(0.92)`;
-              targetCard.classList.add("drag-target");
+            // 新目标滑到被拖卡片原始位置
+            if (targetIndex >= 0 && dragCardRects[targetIndex]) {
+              const newTarget = dragCardRects[targetIndex].el;
+              const offsetX = dragStartRect.left - dragCardRects[targetIndex].rect.left;
+              const offsetY = dragStartRect.top - dragCardRects[targetIndex].rect.top;
+              newTarget.style.transition = "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
+              newTarget.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(0.95)`;
+              newTarget.classList.add("drag-target");
               dragOverIndex = targetIndex;
             }
             dragCurrentTargetIndex = targetIndex;
